@@ -19,7 +19,6 @@ inner_params: []
 
 # Method
 alg: CoRE_MULTI
-alg_name: CoRE_MULTI
 lr: 1e-5
 edit_lr: 1e-2
 seed: 0
