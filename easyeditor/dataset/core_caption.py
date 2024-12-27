@@ -30,7 +30,7 @@ class CoRECaptionDataset(BaseDataset):
             if tokenizer.pad_token == None or tokenizer.pad_token == '':
                 tokenizer.pad_token = tokenizer.eos_token  
                 
-        vis_root = config.coco_image
+        vis_root = config.core_image
         # rephrase_root = config.rephrase_image
         super().__init__(vis_processor, vis_root, None, [data_dir])
 
@@ -58,7 +58,7 @@ class CoRECaptionDataset(BaseDataset):
                 'prompt': record['src'],
                 'pred': record['pred'],
                 'target': record['alt'],
-                'rephrase_prompt': record['rephrase'],
+                # 'rephrase_prompt': record['rephrase'],
                 'image': image,
                 'cond': "{} >> {} || {}".format(
                     record['pred'],
@@ -67,11 +67,11 @@ class CoRECaptionDataset(BaseDataset):
                 )
             }
             
-            item['locality_prompt'] = record['loc']
-            item['locality_ground_truth'] = record['loc_ans']
+            # item['locality_prompt'] = record['loc']
+            # item['locality_ground_truth'] = record['loc_ans']
             
-            item['multimodal_locality_prompt'] = record['m_loc_q']
-            item['multimodal_locality_ground_truth'] = record['m_loc_a']
+            # item['multimodal_locality_prompt'] = record['m_loc_q']
+            # item['multimodal_locality_ground_truth'] = record['m_loc_a']
             data.append(item)
             
         # if size is not None:
