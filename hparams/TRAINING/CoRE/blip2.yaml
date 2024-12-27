@@ -79,4 +79,4 @@ qformer_name_or_path: google-bert/bert-base-uncased
 state_dict_file: /kilab/hf_cache/eva_vit_g.pth
 
 # image
-core_image: /kilab/data/editing-data/CoRE/
+core_image: /kilab/data/visual_genome/VG_100K_all

@@ -48,31 +48,42 @@ class CoRECaptionDataset(BaseDataset):
             # if record['alt'] == "":
             #     continue
             
-            image_path = os.path.join(self.vis_root, record["image"])
+            image_id = next(iter(record.keys()))
+            image_path = os.path.join(self.vis_root, image_id+".jpg")
             image = Image.open(image_path).convert("RGB")
-            # blured_image = self.blur_except_box(image)
-
             image = self.vis_processor(image)
+            
+            # for blured_image
+            # bboxes = [(region['x'], region['y'], region['x']+region['width'], region['y']+region['height'])\
+                        # for region in record[image_id]['regions']]
+            
+            for region in record[image_id]['regions']:
+                bbox = (region['x'], region['y'], region['x']+region['width'], region['y']+region['height'])
+            
+                blured_image = self.blur_except_box(image, bbox)
+                blured_image = self.vis_processor(blured_image)
                       
-            item = {
-                'prompt': record['src'],
-                'pred': record['pred'],
-                'target': record['alt'],
-                # 'rephrase_prompt': record['rephrase'],
-                'image': image,
-                'cond': "{} >> {} || {}".format(
-                    record['pred'],
-                    record['alt'],
-                    record['src']
-                )
-            }
+                for caption in region['captions']:
+                    item = {
+                        # 'prompt': record[image_id]['regions'][0]['captions'][0]['caption'],
+                        # 'pred': record['pred'],
+                        'target': caption['caption'],
+                        # 'rephrase_prompt': record['rephrase'],
+                        'image': image,
+                        'blured_image': blured_image,
+                        # 'cond': "{} >> {} || {}".format(
+                        #     record['pred'],
+                        #     record['alt'],
+                        #     record['src']
+                        # )
+                    }
+                    data.append(item)
             
             # item['locality_prompt'] = record['loc']
             # item['locality_ground_truth'] = record['loc_ans']
             
             # item['multimodal_locality_prompt'] = record['m_loc_q']
             # item['multimodal_locality_ground_truth'] = record['m_loc_a']
-            data.append(item)
             
         # if size is not None:
         #     data = data[:size]        
@@ -176,13 +187,12 @@ class CoRECaptionDataset(BaseDataset):
         }
         return dict_to(batch, self.config.device)
 
-    def blur_except_box(self, image, bounding_boxes, selected_box_idx):
+    def blur_except_box(self, image, bounding_box):
         """
         Apply blur to all areas except the selected bounding box.
 
         :param image_path: Path to the input image.
         :param bounding_boxes: List of bounding boxes in the format [(x1, y1, x2, y2), ...].
-        :param selected_box_idx: Index of the selected bounding box to remain unblurred.
         :param output_path: Path to save the output image.
         """
         # Open the image
@@ -196,8 +206,7 @@ class CoRECaptionDataset(BaseDataset):
         draw = ImageDraw.Draw(mask)
 
         # Draw the selected bounding box on the mask
-        selected_box = bounding_boxes[selected_box_idx]
-        draw.rectangle(selected_box, fill=255)
+        draw.rectangle(bounding_box, fill=255)
 
         # Composite the images using the mask
         final_image = Image.composite(image, blurred_image, mask)

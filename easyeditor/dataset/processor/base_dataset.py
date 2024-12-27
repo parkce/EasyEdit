@@ -25,7 +25,11 @@ class BaseDataset(Dataset):
 
         self.annotation = []
         for ann_path in ann_paths:
-            self.annotation.extend(json.load(open(ann_path, "r")))
+            data = json.load(open(ann_path, "r"))
+            if type(data) == dict:
+                self.annotation.append(data)
+            else:
+                self.annotation.extend(data)
 
         self.vis_processor = vis_processor
         # self.text_processor = text_processor
