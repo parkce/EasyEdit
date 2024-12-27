@@ -12,8 +12,7 @@ class CoREMultimodalTrainingHparams(HyperParams):
     state_dict_file: str
     
     # Image_dir
-    coco_image: str
-    rephrase_image: str
+    core_image: str
     
     # Model
     name: str
