@@ -32,7 +32,7 @@ class CoRECaptionDataset(BaseDataset):
                 
         vis_root = config.core_image
         # rephrase_root = config.rephrase_image
-        super().__init__(vis_processor, vis_root, None, [data_dir])
+        super().__init__(vis_processor, vis_root, None, data_dir)
 
         self.config = config
         self.tok = tokenizer
