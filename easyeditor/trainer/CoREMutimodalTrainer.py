@@ -190,14 +190,15 @@ class CoREMultimodalTrainer(BaseTrainer):
         elapsed = (time.time() - start_time) / (step + 1)
         prog = f"{step+1}/{steps}".ljust(20)
         inner_acc = f"{stats['inner/acc_val']:<12.5f}"
-        outer_acc = f"{stats['edit/acc_val']:<12.5f}"
-        image_acc = f"{stats['image_rephrase/acc_val']:<12.5f}"
-        loc_acc = f"{stats['loc/acc_val']:<12.5f}"
-        loc_image_acc = f"{stats['image_loc/acc_val']:<12.5f}"
+        # outer_acc = f"{stats['edit/acc_val']:<12.5f}"
+        # image_acc = f"{stats['image_rephrase/acc_val']:<12.5f}"
+        # loc_acc = f"{stats['loc/acc_val']:<12.5f}"
+        # loc_image_acc = f"{stats['image_loc/acc_val']:<12.5f}"
 
         LOG.info(
-          f"Step {prog} outer_acc: {outer_acc} image_acc: {image_acc} inner_acc: {inner_acc} it_time: {elapsed:.4f} loc_acc: {loc_acc}, image_loc: {loc_image_acc}"
+          f"Step {prog} inner_acc: {inner_acc} it_time: {elapsed:.4f}"
         )
+        #   f"Step {prog} outer_acc: {outer_acc} image_acc: {image_acc} inner_acc: {inner_acc} it_time: {elapsed:.4f} loc_acc: {loc_acc}, image_loc: {loc_image_acc}"
 
     def validate(self, steps=None, log: bool = False):
         if steps is None or steps > len(self.val_set):
