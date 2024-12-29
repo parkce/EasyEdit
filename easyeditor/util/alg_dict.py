@@ -5,7 +5,8 @@ from ..models.mend import MENDHyperParams, MendRewriteExecutor, MendMultimodalRe
 from ..models.ft import FTHyperParams, apply_ft_to_model
 from ..models.dinm import DINMHyperParams, apply_dinm_to_model
 from ..models.serac import SERACHparams, SeracRewriteExecutor, SeracMultimodalRewriteExecutor
-from ..dataset import ZsreDataset, CounterFactDataset, CaptionDataset, VQADataset, PersonalityDataset, SafetyDataset
+from ..models.core import CoREMultimodalRewriteExecutor, CoRERewriteExecutor
+from ..dataset import ZsreDataset, CounterFactDataset, CaptionDataset, CoRECaptionDataset, VQADataset, PersonalityDataset, SafetyDataset
 from ..models.ike import IKEHyperParams, apply_ike_to_model, apply_ike_to_multimodal_model, apply_ike_to_per_model
 from ..models.ft_api import FTApiHyperParams, apply_ft_api_to_model
 from ..models.qlora import QLoRAHyperParams, apply_qlora_to_model
@@ -28,6 +29,7 @@ ALG_DICT = {
     'KN': apply_kn_to_model,
     'MEND': MendRewriteExecutor().apply_to_model,
     'SERAC': SeracRewriteExecutor().apply_to_model,
+    'CoRE': CoRERewriteExecutor().apply_to_model,
     'IKE': apply_ike_to_model,
     'FT-Api': apply_ft_api_to_model,
     'QLoRA': apply_qlora_to_model,
@@ -47,6 +49,7 @@ ALG_MULTIMODAL_DICT = {
     'MEND': MendMultimodalRewriteExecutor().apply_to_model,
     'SERAC': SeracMultimodalRewriteExecutor().apply_to_model,
     'SERAC_MULTI': SeracMultimodalRewriteExecutor().apply_to_model,
+    'CoRE_MULTI': CoREMultimodalRewriteExecutor().apply_to_model,
     'IKE': apply_ike_to_multimodal_model,
 }
 
@@ -63,6 +66,7 @@ DS_DICT = {
 MULTIMODAL_DS_DICT = {
     "caption": CaptionDataset,
     "vqa": VQADataset,
+    "core": CoRECaptionDataset,
 }
 
 PER_DS_DICT = {

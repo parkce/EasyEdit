@@ -1,7 +1,5 @@
 import os
-from collections import OrderedDict
 from PIL import Image, ImageFilter, ImageDraw
-
 from easyeditor.dataset.processor.base_dataset import BaseDataset
 from easyeditor.dataset.processor.blip_processors import BlipImageEvalProcessor
 from easyeditor.trainer.utils import dict_to
@@ -9,6 +7,8 @@ from PIL import Image
 import typing
 import torch
 import transformers
+from tqdm import tqdm
+
 
 class CoRECaptionDataset(BaseDataset):
     def __init__(self, data_dir: str, size:  typing.Optional[int] = None, config=None, *args, **kwargs):
@@ -43,47 +43,26 @@ class CoRECaptionDataset(BaseDataset):
         data = []
         if size is not None:
             self.annotation = self.annotation[:size]  
-        for i, record in enumerate(self.annotation):
-            
-            # if record['alt'] == "":
-            #     continue
-            
+        for i, record in tqdm(enumerate(self.annotation), total=len(self.annotation)):
             image_id = next(iter(record.keys()))
             image_path = os.path.join(self.vis_root, image_id+".jpg")
             image = Image.open(image_path).convert("RGB")
-            image = self.vis_processor(image)
+            image_idx = self.vis_processor(image)
             
             # for blured_image
-            # bboxes = [(region['x'], region['y'], region['x']+region['width'], region['y']+region['height'])\
-                        # for region in record[image_id]['regions']]
-            
             for region in record[image_id]['regions']:
                 bbox = (region['x'], region['y'], region['x']+region['width'], region['y']+region['height'])
             
                 blured_image = self.blur_except_box(image, bbox)
-                blured_image = self.vis_processor(blured_image)
+                blured_image_idx = self.vis_processor(blured_image)
                       
                 for caption in region['captions']:
                     item = {
-                        # 'prompt': record[image_id]['regions'][0]['captions'][0]['caption'],
-                        # 'pred': record['pred'],
                         'target': caption['caption'],
-                        # 'rephrase_prompt': record['rephrase'],
-                        'image': image,
-                        'blured_image': blured_image,
-                        # 'cond': "{} >> {} || {}".format(
-                        #     record['pred'],
-                        #     record['alt'],
-                        #     record['src']
-                        # )
+                        'image': image_idx,
+                        'blured_image': blured_image_idx,
                     }
                     data.append(item)
-            
-            # item['locality_prompt'] = record['loc']
-            # item['locality_ground_truth'] = record['loc_ans']
-            
-            # item['multimodal_locality_prompt'] = record['m_loc_q']
-            # item['multimodal_locality_ground_truth'] = record['m_loc_a']
             
         # if size is not None:
         #     data = data[:size]        
@@ -98,15 +77,7 @@ class CoRECaptionDataset(BaseDataset):
     def collate_fn(self, batch):
         src = [b['prompt'] for b in batch]
         trg = [" " + b['target'] for b in batch]
-        # cond = [b['cond'] for b in batch]
-        # rephrase = [b['rephrase_prompt'] for b in batch]
         image = [b['image'] for b in batch]
-        # image_rephrase = [b['image_rephrase'] for b in batch]
-        # loc_q = [b["locality_prompt"] for b in batch]
-        # loc_a = [" " + b["locality_ground_truth"] for b in batch]
-        # m_loc_image = [b['multimodal_locality_image'] for b in batch]
-        # m_loc_q = [b['multimodal_locality_prompt'] for b in batch]
-        # m_loc_a = [" " + b['multimodal_locality_ground_truth'] for b in batch]
         
         # edit_inner
         edit_inner = {}
@@ -120,70 +91,9 @@ class CoRECaptionDataset(BaseDataset):
             edit_inner['prompts_len'] = [len(self.tok.encode(s)) for s in src]
             edit_inner['labels'] = self.tok(trg, return_tensors="pt",)["input_ids"]
         
-        # edit_outer
-        # edit_outer = {}
-        # edit_outer['image'] = torch.stack(image, dim=0)
-        # # edit_outer['text_input'] = [r + t for r, t in zip(rephrase, trg)]
-        # edit_outer['labels'] = trg
-        # if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
-        #     edit_outer['prompts_len'] = [len(self.tok.encode(r, add_special_tokens=False)) for r in rephrase]
-        #     edit_outer['labels'] = self.tok(trg, add_special_tokens=False, return_tensors="pt",)["input_ids"]
-        # else:
-        #     edit_outer['prompts_len'] = [len(self.tok.encode(r)) for r in rephrase]
-        #     edit_outer['labels'] = self.tok(trg, return_tensors="pt",)["input_ids"]
-            
-        # # edit_outer_image
-        # edit_outer_image = {}
-        # edit_outer_image['image'] = torch.stack(image_rephrase, dim=0)
-        # edit_outer_image['text_input'] = [s + t for s, t in zip(src, trg)]
-        # edit_outer_image['labels'] = trg
-        # if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
-        #     edit_outer_image['prompts_len'] = [len(self.tok.encode(s, add_special_tokens=False)) for s in src]
-        #     edit_outer_image['labels'] = self.tok(trg, add_special_tokens=False, return_tensors="pt",)["input_ids"]
-        # else:
-        #     edit_outer_image['prompts_len'] = [len(self.tok.encode(s)) for s in src]
-        #     edit_outer_image['labels'] = self.tok(trg, return_tensors="pt",)["input_ids"]
-        
-        # # loc
-        # loc = {}
-        # loc['image'] = None
-        # loc['text_input'] = [q + a for q, a in zip(loc_q, loc_a)]
-        # loc['labels'] = loc_a
-        # if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
-        #     loc['prompts_len'] = [len(self.tok.encode(q, add_special_tokens=False)) for q in loc_q]
-        #     loc['labels'] = self.tok(loc_a, add_special_tokens=False, return_tensors="pt",)["input_ids"]
-        # else:
-        #     loc['prompts_len'] = [len(self.tok.encode(q)) for q in loc_q]
-        #     loc['labels'] = self.tok(loc_a, return_tensors="pt",)["input_ids"]
-        
-        # # m_loc
-        # loc_image = {}
-        # loc_image['image'] = torch.stack(m_loc_image, dim=0)
-        # loc_image['text_input'] = [self.prompt.format(q) + a for q, a in zip(m_loc_q, m_loc_a)]
-        # loc_image['labels'] = m_loc_a
-        # if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
-        #     loc_image['prompts_len'] = [len(self.tok.encode(self.prompt.format(q), add_special_tokens=False)) for q in m_loc_q]
-        #     loc_image['labels'] = self.tok(m_loc_a, add_special_tokens=False, return_tensors="pt",)["input_ids"]
-        # else:
-        #     loc_image['prompts_len'] = [len(self.tok.encode(self.prompt.format(q))) for q in m_loc_q]
-        #     loc_image['labels'] = self.tok(m_loc_a, return_tensors="pt",)["input_ids"]
-
-        # cond
-        # cond = self.tok(
-        #     cond,
-        #     return_tensors="pt",
-        #     padding=True,
-        #     max_length=self.max_length,
-        #     truncation=True,
-        # ).to(self.config.device)
         
         batch = {
             "edit_inner": edit_inner,
-            # "edit_outer": edit_outer,
-            # "edit_outer_image": edit_outer_image,
-            # "loc": loc,
-            # "loc_image": loc_image,
-            # "cond": cond
         }
         return dict_to(batch, self.config.device)
 
@@ -195,9 +105,6 @@ class CoRECaptionDataset(BaseDataset):
         :param bounding_boxes: List of bounding boxes in the format [(x1, y1, x2, y2), ...].
         :param output_path: Path to save the output image.
         """
-        # Open the image
-        # image = Image.open(image_path)
-
         # Apply blur filter to the entire image
         blurred_image = image.filter(ImageFilter.GaussianBlur(15))
 
