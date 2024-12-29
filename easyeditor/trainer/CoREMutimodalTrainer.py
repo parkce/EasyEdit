@@ -22,7 +22,7 @@ from .utils import (
 LOG = logging.getLogger(__name__)
 
 
-class MultimodalTrainer(BaseTrainer):
+class CoREMultimodalTrainer(BaseTrainer):
     def __init__(self, config, train_set: Dataset, val_set: Dataset):
         super().__init__(config, train_set, val_set)
 

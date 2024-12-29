@@ -17,7 +17,7 @@ def translate_tokens(tokens, from_tok, to_tok):
     return to_tok(text, return_tensors="pt")["input_ids"].to(tokens.device)
 
 
-class CoRE(EditableModel):
+class CoRE_MULTI(EditableModel):
     def __init__(self, model, config, model_constructor, classifier=None, classifier_tok=None,
                  replacement=None, replacement_tok=None, cache_inputs=None, cache_labels=None,
                  scale=None):
