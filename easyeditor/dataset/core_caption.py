@@ -50,13 +50,13 @@ class CoRECaptionDataset(BaseDataset):
             image_idx = self.vis_processor(image)
             
             # for blured_image
-            for region in record[image_id]['regions']:
+            for region in record[image_id]['regions'][:1]:
                 bbox = (region['x'], region['y'], region['x']+region['width'], region['y']+region['height'])
             
                 blured_image = self.blur_except_box(image, bbox)
                 blured_image_idx = self.vis_processor(blured_image)
                       
-                for caption in region['captions']:
+                for caption in region['captions'][:1]:
                     item = {
                         'target': caption['caption'],
                         'image': image_idx,
