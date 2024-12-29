@@ -58,6 +58,7 @@ class CoRECaptionDataset(BaseDataset):
                       
                 for caption in region['captions'][:1]:
                     item = {
+                        'prompt': "This image is that ",
                         'target': caption['caption'],
                         'image': image_idx,
                         'blured_image': blured_image_idx,
