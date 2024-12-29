@@ -43,7 +43,7 @@ use_all_negatives: False
 freeze_cntr: False
 dist_heads: 1
 lora: null
-archive: results/models/CoRE_MULTI/blip2-caption
+archive: null
 
 batch_size: 1
 model_save_pt: 1000
