@@ -196,7 +196,7 @@ class CoRE_MULTI(EditableModel):
         cache_inputs = self.cache_inputs + inputs
         cache_labels = self.cache_labels + labels
 
-        new_model = SERAC_MULTI(self.model, self.config, self.model_constructor, self.classifier, self.classifier_tok,
+        new_model = CoRE_MULTI(self.model, self.config, self.model_constructor, self.classifier, self.classifier_tok,
                         self.replacement, self.replacement_tok, cache_inputs, cache_labels, self.scale)
         new_model.train(self.training)
         return new_model, {}

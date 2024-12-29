@@ -59,7 +59,7 @@ class CoREMultimodalTrainer(BaseTrainer):
         # Do the edit
 
         start = time.time()
-        edited_model, model_info = self.model.edit(batch["edit_inner"], batch["cond"])
+        edited_model, model_info = self.model.edit(batch["edit_inner"], batch["edit_inner"])
         edit_time = time.time() - start
 
         with torch.set_grad_enabled(training):
@@ -109,13 +109,13 @@ class CoREMultimodalTrainer(BaseTrainer):
             #     post_base_logits = post_base_outputs
             #     kl_mask = torch.ones(post_base_logits.shape[0], post_base_logits.shape[1]).to(post_base_logits.device)
 
-            post_image_base_outputs = edited_model(batch["loc_image"])
-            if not isinstance(post_base_outputs, torch.Tensor):
-                post_image_base_logits = post_image_base_outputs.logits
-                kl_image_mask = post_image_base_outputs.attention_mask
-            else:
-                post_image_base_logits = post_image_base_outputs
-                kl_image_mask = torch.ones(post_image_base_logits.shape[0], post_image_base_logits.shape[1]).to(base_image_logits.device)
+            # # post_image_base_outputs = edited_model(batch["loc_image"])
+            # if not isinstance(post_base_outputs, torch.Tensor):
+            #     post_image_base_logits = post_image_base_outputs.logits
+            #     kl_image_mask = post_image_base_outputs.attention_mask
+            # else:
+            #     post_image_base_logits = post_image_base_outputs
+            #     kl_image_mask = torch.ones(post_image_base_logits.shape[0], post_image_base_logits.shape[1]).to(base_image_logits.device)
 
             # l_loc = kl_loc_loss(base_logits.detach(), post_base_logits, mask=kl_mask)
             # l_image_loc = kl_loc_loss(base_image_logits.detach(), post_image_base_logits, mask=kl_image_mask)
