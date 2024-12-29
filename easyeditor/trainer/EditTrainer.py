@@ -37,8 +37,8 @@ class EditTrainer(BaseTrainer):
         self.model.train(training)
         self.original_model.train(training)
 
-        with torch.no_grad():
-            base_logits = self.model(**batch["loc"])
+        # with torch.no_grad():
+        #     base_logits = self.model(**batch["loc"])
 
         # Do the edit
         start = time.time()
@@ -56,16 +56,18 @@ class EditTrainer(BaseTrainer):
             )["nll"]
 
             # Locality loss
-            post_base_logits = edited_model(**batch['loc'])
-            kl_mask = batch["loc"].get(
-                "decoder_attention_mask", batch["loc"]["attention_mask"]
-            )
-            if kl_mask.size(1) != base_logits.size(1):
-                base_logits = base_logits[:, -kl_mask.size(1):]
-                post_base_logits = post_base_logits[:, -kl_mask.size(1):]
-            l_loc = kl_loc_loss(base_logits.detach(), post_base_logits, mask=kl_mask)
+            # post_base_logits = edited_model(**batch['loc'])
+            # kl_mask = batch["loc"].get(
+            #     "decoder_attention_mask", batch["loc"]["attention_mask"]
+            # )
+            # if kl_mask.size(1) != base_logits.size(1):
+            #     base_logits = base_logits[:, -kl_mask.size(1):]
+            #     post_base_logits = post_base_logits[:, -kl_mask.size(1):]
+            # l_loc = kl_loc_loss(base_logits.detach(), post_base_logits, mask=kl_mask)
+            l_loc = l_edit
 
-        l_total_edit = self.config.cedit * l_edit + self.config.cloc * l_loc
+        l_total_edit = self.config.cedit
+        #l_total_edit = self.config.cedit * l_edit + self.config.cloc * l_loc
 
         if training:
             safe_backward(
@@ -78,25 +80,25 @@ class EditTrainer(BaseTrainer):
             post_edit_dict = self.model.edit_loss_fn(
                 self.config, post_edit_logits, batch["edit_inner"]["labels"]
             )
-            post_loc_dict = self.model.loc_loss_fn(
-                self.config, post_base_logits, batch["loc"]["labels"]
-            )
-            pre_loc_dict = self.model.loc_loss_fn(
-                self.config, base_logits, batch["loc"]["labels"]
-            )
+            # post_loc_dict = self.model.loc_loss_fn(
+            #     self.config, post_base_logits, batch["loc"]["labels"]
+            # )
+            # pre_loc_dict = self.model.loc_loss_fn(
+            #     self.config, base_logits, batch["loc"]["labels"]
+            # )
 
         info_dict = {}
         info_dict["loss/edit"] = l_edit.item()
-        info_dict["loss/loc"] = l_loc.item()
+        # info_dict["loss/loc"] = l_loc.item()
         info_dict["edit/acc"] = post_edit_dict["acc"].item()
         info_dict["edit/log_prob"] = post_edit_dict["log_prob"].item()
         info_dict["edit/prob"] = post_edit_dict["prob"].item()
-        info_dict["acc/pre"] = pre_loc_dict["acc"].item()
-        info_dict["acc/post"] = post_loc_dict["acc"].item()
-        info_dict["nll/pre"] = pre_loc_dict["nll"].item()
-        info_dict["nll/post"] = post_loc_dict["nll"].item()
-        info_dict["n_tokens/pre"] = post_loc_dict["n_tokens"]
-        info_dict["n_tokens/post"] = post_loc_dict["n_tokens"]
+        # info_dict["acc/pre"] = pre_loc_dict["acc"].item()
+        # info_dict["acc/post"] = post_loc_dict["acc"].item()
+        # info_dict["nll/pre"] = pre_loc_dict["nll"].item()
+        # info_dict["nll/post"] = post_loc_dict["nll"].item()
+        # info_dict["n_tokens/pre"] = post_loc_dict["n_tokens"]
+        # info_dict["n_tokens/post"] = post_loc_dict["n_tokens"]
         info_dict["time/edit"] = edit_time
 
         # Base loss
@@ -107,10 +109,10 @@ class EditTrainer(BaseTrainer):
                     original_logits, batch["loc"]["labels"]
                 )
 
-            base_logits = self.model(**batch["loc"])
-            l_base = kl_loc_loss(
-                original_logits.detach(), base_logits, mask=kl_mask.detach()
-            )
+            # base_logits = self.model(**batch["loc"])
+            # l_base = kl_loc_loss(
+            #     original_logits.detach(), base_logits, mask=kl_mask.detach()
+            # )
 
             if training:
                 safe_backward(

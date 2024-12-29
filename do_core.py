@@ -1,4 +1,4 @@
-from easyeditor import MultimodalTrainer, CoRECaptionDataset, CoREMultimodalTrainingHparams
+from easyeditor import CoREMultimodalTrainer, CoRECaptionDataset, CoREMultimodalTrainingHparams
 import glob
 from pathlib import Path
 
@@ -9,5 +9,5 @@ directory_path = Path('/kilab/data/etri/core')
 train_ds = CoRECaptionDataset(glob.glob(str(directory_path / 'train/*json')), config=training_hparams)
 eval_ds = CoRECaptionDataset(glob.glob(str(directory_path / 'test/*json')), config=training_hparams)
 
-trainer = MultimodalTrainer(config=training_hparams, train_set=train_ds,val_set=eval_ds)
+trainer = CoREMultimodalTrainer(config=training_hparams, train_set=train_ds,val_set=eval_ds)
 trainer.run()

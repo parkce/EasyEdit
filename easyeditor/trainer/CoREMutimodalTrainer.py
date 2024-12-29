@@ -33,11 +33,11 @@ class CoREMultimodalTrainer(BaseTrainer):
         else:
             self.lr_opt = None
 
-        if hasattr(self.config, "ft"):
-            if getattr(self.config.ft, "use_locality", False):
-                batch = next(self.edit_gen)
-                self.model.loc_ids = batch["loc"]["input_ids"]
-                self.model.loc_masks = batch["loc"]["attention_mask"]
+        # if hasattr(self.config, "ft"):
+        #     if getattr(self.config.ft, "use_locality", False):
+        #         batch = next(self.edit_gen)
+        #         self.model.loc_ids = batch["loc"]["input_ids"]
+        #         self.model.loc_masks = batch["loc"]["attention_mask"]
 
     def edit_step(self, batch, training: bool):
         self.model.train(training)
