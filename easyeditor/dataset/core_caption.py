@@ -30,7 +30,7 @@ class CoRECaptionDataset(BaseDataset):
             if tokenizer.pad_token == None or tokenizer.pad_token == '':
                 tokenizer.pad_token = tokenizer.eos_token  
                 
-        vis_root = config.core_image
+        vis_root = config.coco_image
         # rephrase_root = config.rephrase_image
         super().__init__(vis_processor, vis_root, None, data_dir)
 
@@ -62,6 +62,7 @@ class CoRECaptionDataset(BaseDataset):
                         'target': caption['caption'],
                         'image': image_idx,
                         'blured_image': blured_image_idx,
+                        
                     }
                     data.append(item)
             
@@ -83,7 +84,8 @@ class CoRECaptionDataset(BaseDataset):
         # edit_inner
         edit_inner = {}
         edit_inner['image'] = torch.stack(image, dim=0)
-        edit_inner['text_input'] = [s + t for s, t in zip(src, trg)]
+        edit_inner['text_input'] = src
+        # edit_inner['text_input'] = [s + t for s, t in zip(src, trg)]
         edit_inner['labels'] = trg
         if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
             edit_inner['prompts_len'] = [len(self.tok.encode(s, add_special_tokens=False)) for s in src]

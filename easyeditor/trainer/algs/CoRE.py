@@ -290,49 +290,46 @@ class CoRE_MULTI(EditableModel):
             pre = torch.full((kwargs["labels"].shape[0], rep_kwargs["input_ids"].shape[-1] - kwargs["labels"].shape[-1]), -100,
                              device=kwargs["labels"].device)
             rep_kwargs["labels"] = torch.cat((pre, kwargs["labels"]), dim=-1)
-        # if self.config.model_name == "minigpt4":
-            # rep_kwargs["labels"] = self.replacement_tok(rep_kwargs["labels"], return_tensors="pt", padding=True).to(self.config.device)["input_ids"]
-            # rep_kwargs["labels"] = rep_kwargs["labels"]
         return rep_kwargs
 
-    def run_classifier(self, *inputs, **kwargs):
-        cache_inputs = self.build_cls_cache_inputs()
-        if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
-            test_inputs = inputs[0]["text_input"]
-        else:
-            test_inputs = self.replacement_tok.batch_decode(kwargs["input_ids"], skip_special_tokens=True)
+    # def run_classifier(self, *inputs, **kwargs):
+    #     cache_inputs = self.build_cls_cache_inputs()
+    #     if self.config.model_name == "minigpt4" or self.config.model_name == "blip2":
+    #         test_inputs = inputs[0]["text_input"]
+    #     else:
+    #         test_inputs = self.replacement_tok.batch_decode(kwargs["input_ids"], skip_special_tokens=True)
 
-        if self.config.cross_attend:
-            log_sim_matrix = self.crossattend_logsim_matrix(cache_inputs, test_inputs)
-        else:
-            log_sim_matrix = self.embedding_logsim_matrix(cache_inputs, test_inputs)
+    #     if self.config.cross_attend:
+    #         log_sim_matrix = self.crossattend_logsim_matrix(cache_inputs, test_inputs)
+    #     else:
+    #         log_sim_matrix = self.embedding_logsim_matrix(cache_inputs, test_inputs)
 
-        sims = log_sim_matrix.exp()
-        assert sims.max() <= 1, "Similarities shouldn't exceed 1!"
+    #     sims = log_sim_matrix.exp()
+    #     assert sims.max() <= 1, "Similarities shouldn't exceed 1!"
 
-        cls_sims, cls_idxs = sims.max(-1)
-        return cls_sims, cls_idxs, log_sim_matrix
+    #     cls_sims, cls_idxs = sims.max(-1)
+    #     return cls_sims, cls_idxs, log_sim_matrix
 
     def generate(self, *args, **kwargs):
-        input_text = self.replacement_tok.batch_decode(kwargs["input_ids"], skip_special_tokens=True)
+        # input_text = self.replacement_tok.batch_decode(kwargs["input_ids"], skip_special_tokens=True)
 
         assert len(args) == 0, "Should only pass named arguments to generate()"
-        if len(self.cache_inputs) > 0:
-            cls_sims, cls_idxs, _ = self.run_classifier(*args, **kwargs)
-            assert cls_sims.numel() == 1
-            print(f"Cache score: {cls_sims.item()} " + ("[MISS]" if cls_sims.item() < 0.5 else "[HIT]"))
-            if cls_sims.item() > 0.5:
-                rep_input = self.build_rep_input_tokens(kwargs, cls_idxs, generation=True)
-                kwargs["input_ids"] = rep_input["input_ids"]
-                kwargs["attention_mask"] = rep_input["attention_mask"]
-                rep_input_text = self.replacement_tok.decode(rep_input["input_ids"][0])
-                print(f"Returning counterfactual model output for '{rep_input_text}'")
-                if self.config.freeze_cntr:
-                    return self.model.generate(*args, **kwargs)
-                else:
-                    return self.replacement.generate(*args, **kwargs)
+        # if len(self.cache_inputs) > 0:
+        #     cls_sims, cls_idxs, _ = self.run_classifier(*args, **kwargs)
+        #     assert cls_sims.numel() == 1
+        #     print(f"Cache score: {cls_sims.item()} " + ("[MISS]" if cls_sims.item() < 0.5 else "[HIT]"))
+        #     if cls_sims.item() > 0.5:
+        #         rep_input = self.build_rep_input_tokens(kwargs, cls_idxs, generation=True)
+        #         kwargs["input_ids"] = rep_input["input_ids"]
+        #         kwargs["attention_mask"] = rep_input["attention_mask"]
+        #         rep_input_text = self.replacement_tok.decode(rep_input["input_ids"][0])
+        #         print(f"Returning counterfactual model output for '{rep_input_text}'")
+        #         if self.config.freeze_cntr:
+        #             return self.model.generate(*args, **kwargs)
+        #         else:
+        #             return self.replacement.generate(*args, **kwargs)
 
-        print(f"Returning base model output for '{input_text}'")
+        # print(f"Returning base model output for '{input_text}'")
         return self.model.generate(*args, **kwargs)
 
     def forward(self, *inputs, return_logits_only=True, eps=torch.finfo(torch.float32).eps, pos_pairs=None, **kwargs):
@@ -351,8 +348,6 @@ class CoRE_MULTI(EditableModel):
                 return super_out
             else:
                 if self.config.model_name == "blip2" or self.config.model_name == "minigpt4":
-                    # if "prompts_len" in kwargs:
-                    #     prompts_len = kwargs.pop("prompts_len")
                     base_logits = self.model(*inputs, **kwargs)
                     if not isinstance(base_logits, torch.Tensor):
                         final_labels = base_logits.labels
@@ -380,17 +375,7 @@ class CoRE_MULTI(EditableModel):
                 rep_cls_labels = rep_cls_inputs.pop("labels")
                 # add vision outputs
                 image = inputs[0]["image"]
-                # if rep_cls_inputs["input_ids"][:, -1] != 13:
-                #     eos = torch.ones([rep_cls_inputs["input_ids"].shape[0], 1],
-                #                      dtype=torch.long).to(rep_cls_inputs["input_ids"].device).fill_(13)
-                #     eos_attn = eos.fill_(1)
-                #     rep_cls_inputs["input_ids"] = torch.cat([rep_cls_inputs["input_ids"], eos], dim=1)
-                #     rep_cls_inputs["attention_mask"] = torch.cat([rep_cls_inputs["attention_mask"], eos_attn], dim=1)
                 if image is not None:
-                    # vision_outputs = self.model.vision_model(
-                    #     pixel_values=pixel_values
-                    # )
-                    # image_embeds = vision_outputs[0]
                     with self.model.maybe_autocast():
                         image_embeds = self.model.ln_vision(self.model.visual_encoder(image))
                     image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(image.device)
@@ -401,7 +386,6 @@ class CoRE_MULTI(EditableModel):
                         encoder_attention_mask=image_atts,
                         return_dict=True,
                     )
-                    # query_output = query_output[0] 
                     self.language_projection = self.language_projection.to(query_output.last_hidden_state.device)
                     inputs_opt = self.language_projection(query_output.last_hidden_state)
                     atts_opt = torch.ones(
@@ -434,12 +418,6 @@ class CoRE_MULTI(EditableModel):
             elif self.config.model_name == "minigpt4":
                 rep_cls_labels = rep_cls_inputs.pop("labels")
                 image = inputs[0]["image"]
-                # if rep_cls_inputs["input_ids"][:, -1] != 13:
-                #     eos = torch.ones([rep_cls_inputs["input_ids"].shape[0], 1],
-                #                      dtype=torch.long).to(rep_cls_inputs["input_ids"].device).fill_(13)
-                #     eos_attn = eos.fill_(1)
-                #     rep_cls_inputs["input_ids"] = torch.cat([rep_cls_inputs["input_ids"], eos], dim=1)
-                #     rep_cls_inputs["attention_mask"] = torch.cat([rep_cls_inputs["attention_mask"], eos_attn], dim=1)
                 if image is not None:
                     img_embeds, atts_img = self.model.encode_img(image)
                     prompt = '###Human: <Img><ImageHere></Img> '
@@ -447,23 +425,12 @@ class CoRE_MULTI(EditableModel):
                     
                     to_regress_tokens = rep_cls_inputs
                     targets = rep_cls_labels   
-                    # for i, prompt_len in enumerate(inputs[0]['prompts_len']):
-                    #     targets[i, :prompt_len] = -100    
                     empty_targets = (torch.ones(atts_img.shape, dtype=torch.long).to(image.device).fill_(-100))
                     targets = torch.cat([empty_targets, targets], dim=1)
-
-                    # batch_size = img_embeds.shape[0]
-                    # bos = torch.ones([batch_size, 1],
-                    #                 dtype=to_regress_tokens["input_ids"].dtype,
-                    #                 device=to_regress_tokens["input_ids"].device) * self.replacement_tok.bos_token_id
-                    # bos_embeds = self.replacement.model.embed_tokens(bos)
-                    # atts_bos = atts_img[:, :1]
 
                     to_regress_embeds = self.replacement.model.embed_tokens(to_regress_tokens["input_ids"])
                     inputs_embeds = torch.cat([img_embeds, to_regress_embeds], dim=1)
                     attention_mask = torch.cat([atts_img, to_regress_tokens["attention_mask"]], dim=1) 
-                    # inputs_embeds = torch.cat([bos_embeds, img_embeds, to_regress_embeds], dim=1)
-                    # attention_mask = torch.cat([atts_bos, atts_img, to_regress_tokens["attention_mask"]], dim=1) 
                     
                     rep_cls_outputs = self.replacement(
                         inputs_embeds=inputs_embeds,
@@ -499,9 +466,6 @@ class CoRE_MULTI(EditableModel):
             'sims/neg': (cls_sims < 0.5).float().mean().item(),
             'params/scale': self.scale.item() if self.scale is not None else 0.0,
         }
-
-        # if hasattr(self.model, "name_or_path") and "gpt" in self.model.name_or_path.lower():
-        #     rep_cls_logits = rep_cls_logits[:, -kwargs["labels"].shape[-1]:, :]
 
         if soft:
             if base_probs.size(1) != rep_cls_logits.size(1):
@@ -556,9 +520,8 @@ if __name__ == '__main__':
     config.gtn.n_hidden = 1
     config.gtn = config.gtn.__dict__
 
-    gtn = SERAC(model, config, lambda: copy.deepcopy(model)).cuda()
+    gtn = CoRE_MULTI(model, config, lambda: copy.deepcopy(model)).cuda()
     # torch.save(gtn.state_dict(), "test_state.pt")
-    import pdb; pdb.set_trace()
     gtn.load_state_dict(torch.load("test_state.pt"))
     x = torch.arange(20).view(1, 20).cuda() + 1000
     orig_logits = gtn(x)

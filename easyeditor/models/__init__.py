@@ -3,6 +3,7 @@ from .ike import *
 from .kn import *
 from .memit import *
 from .mend import *
+from .core import *
 from .rome import *
 from .serac import *
 from .pmet import *

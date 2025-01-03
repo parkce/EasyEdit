@@ -72,13 +72,14 @@ def compute_icl_multimodal_edit_quality(
     new_fact = f'New Fact: {prompt} {target}\nPrompt: {prompt}'
 
     if pre_edit:
-        edit_acc, _ = icl_multimodal_lm_eval(model, model_name, hparams, tok, icl_examples,
+        edit_acc, pred_ids = icl_multimodal_lm_eval(model, model_name, hparams, tok, icl_examples,
                                              target, prompt, image)
     else:
-        edit_acc, _ = icl_multimodal_lm_eval(model, model_name, hparams, tok, icl_examples,
+        edit_acc, pred_ids = icl_multimodal_lm_eval(model, model_name, hparams, tok, icl_examples,
                                              target, new_fact, image)
     ret = {
-        f"rewrite_acc": edit_acc
+        f"rewrite_acc": edit_acc,
+        f"pred_ids": pred_ids
     }
     if rephrase is not None:
         rephrase_acc, _ = icl_multimodal_lm_eval(model, model_name, hparams, tok, icl_examples,
@@ -155,7 +156,7 @@ def prepare_multimodal_edit(hparams,
     ret = {
         'text_input': text_input,
         'image': image,
-        'labels': target,
+        'labels': target.to(hparams.device),
         'prompts_len': prompts_len
     }
     return ret
@@ -252,7 +253,8 @@ def compute_multimodal_edit_results(
     image = record["image"] if record["image"].is_cuda else record["image"].to(hparams.device)
 
     edit_inner = prepare_multimodal_edit(hparams, tok, target, rewrite_prompts, image)
-    ret['rewrite_acc'], _ = compute_multimodal_edit_quality(model, edit_inner)
+    ret['rewrite_acc'], pred_ids = compute_multimodal_edit_quality(model, edit_inner)
+    ret['pred'] = tok.decode(pred_ids[0][pred_ids[0] != 0]).lstrip()
 
     if "rephrase_prompt" in record.keys():
         rephrase_prompts = record["rephrase_prompt"]

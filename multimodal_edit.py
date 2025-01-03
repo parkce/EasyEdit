@@ -10,6 +10,7 @@ from easyeditor import encode_ike_facts_multimodal
 from sentence_transformers import SentenceTransformer
 import random
 
+
 def print_result(metrics):
     rewrite_acc = mean([m['post']['rewrite_acc'].item() for m in metrics])
     rephrase_acc = mean([m['post']['rephrase_acc'].item() for m in metrics])

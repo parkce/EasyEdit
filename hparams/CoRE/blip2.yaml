@@ -2,7 +2,7 @@
 device: 0
 
 name: facebook/opt-125m
-model_name: blip2-caption
+model_name: blip2
 model_class: Blip2OPT
 small_name: facebook/opt-125m
 tokenizer_class: GPT2Tokenizer
@@ -19,6 +19,7 @@ inner_params: []
 
 # Method
 alg: CoRE_MULTI
+alg_name: CoRE_MULTI
 lr: 1e-5
 edit_lr: 1e-2
 seed: 0
@@ -43,7 +44,7 @@ use_all_negatives: False
 freeze_cntr: False
 dist_heads: 1
 lora: null
-archive: null
+archive: results/models/CoRE_MULTI/blip2
 
 batch_size: 1
 model_save_pt: 1000

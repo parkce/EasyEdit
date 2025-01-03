@@ -170,14 +170,15 @@ class CoREMultimodalRewriteExecutor(CoRERewriteExecutor):
         ]
         image = [request["image"] for request in requests]
         image = torch.stack(image, dim=0)
-        text_input = [s + t for s, t in zip(src, trg)]
+        text_input = src
+        # text_input = [s + t for s, t in zip(src, trg)]
         labels = trg
         if hparams.model_name == "minigpt4":
             prompts_len = [len(tok.encode(s, add_special_tokens=False)) for s in src]
         else:
             prompts_len = [len(tok.encode(s)) for s in src]
 
-        # Run MEND
+        # Run captioning
         edit_inner = dict(
             image=image,
             text_input=text_input,

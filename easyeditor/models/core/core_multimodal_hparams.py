@@ -13,7 +13,7 @@ class CoREMultimodalHparams(HyperParams):
     
     # Image_dir
     coco_image: str
-    rephrase_image: str
+    # rephrase_image: str
     
     # Model
     name: str
